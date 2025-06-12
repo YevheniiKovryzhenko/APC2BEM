@@ -19,12 +19,16 @@ s = ArgParseSettings()
         required = true
 end
 
-parsed_args = parse_args(s)
+# parsed_args = parse_args(s)
 
-infile = parsed_args["input"]
-outfile = parsed_args["output"]
+# infile = parsed_args["input"]
+# outfile = parsed_args["output"]
 
-scale = parsed_args["scale"]
+# scale = parsed_args["scale"]
+# julia apc2bem.jl 10x45MR-PERF.PE0 10x45MR-PERF.BEM
+infile = "10x45MR-PERF.PE0"
+outfile = "10x45MR-PERF.BEM"
+scale = 1.0
 
 open(infile, "r") do io
     readuntil(io, "(IN)       (IN)       (QUOTED)    (LE-TE)     (PRATHER)      (IN)     RATIO         (DEG)       (IN)      (IN**2)      (IN)         (IN)         (IN)")
@@ -62,7 +66,13 @@ tangential = zeros(num_sections)
 # Radius/R, Chord/R, Twist (deg), Rake/R, Skew/R, Sweep, t/c, CLi, Axial, Tangential
 bem = [radius_R chord_R twist_deg rake_R skew_R sweep_deg t_c CLi axial tangential]
 
-linterp(A, B, at) = interpolate((A,), B, Gridded(Linear()))[at]
+# Replace the linterp function with a more robust version
+function linterp(x_vals, y_vals, at)
+    # Clamp the interpolation point to the valid range
+    at_clamped = clamp(at, minimum(x_vals), maximum(x_vals))
+    itp = interpolate((x_vals,), y_vals, Gridded(Linear()))
+    return itp(at_clamped)
+end
 
 diameter = 2*R*scale
 beta3_4 = linterp(radius_R, twist_deg, 0.75)
